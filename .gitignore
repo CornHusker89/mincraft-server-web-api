@@ -1,5 +1,4 @@
 venv/
 .env
 __pycache__
-server.crt
-server.key
+server_key*
