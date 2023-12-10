@@ -10,6 +10,7 @@ server_executable_name = server_executable_path[server_executable_path.rfind("/"
 
 next_command_list: list = ["kill WAHuskeyFan"]
 
+
 async def server():
     stdout = asyncio.subprocess.PIPE
     shell_script = await asyncio.create_subprocess_shell(f"cd {server_executable_directory}/; ./{server_executable_name}",
@@ -41,11 +42,9 @@ def send_command(command: str) -> None:
     next_command_list.append(command)
 
 
-loop = asyncio.get_event_loop()
-loop.create_task(server())
-
-if __name__ == "__main__":
-    loop.run_forever()
+# loop = asyncio.get_event_loop()
+# loop.create_task(server())
+# loop.run_forever()
     
 
 
