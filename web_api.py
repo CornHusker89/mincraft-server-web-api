@@ -2,6 +2,12 @@
 import flask
 from flask_limiter import Limiter
 import os
+import asyncio
+import threading
+
+import minecraft_server
+
+
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -30,10 +36,27 @@ else:
 
 
 
+
+
+
 # api routes
-@app.route('/')
+@app.route('/api')
 def index():
     return flask.jsonify('API is online!')
+
+
+@app.route("/api/minecraft/start", methods=["POST"])
+def start():
+
+    def start_server():
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        loop = asyncio.get_event_loop()
+        loop.create_task(minecraft_server.server())
+        loop.run_forever()
+        
+    thread = threading.Thread(target=start_server)
+    thread.start()
+    return "", 204
 
 
 @app.route("/api/minecraft/players", methods=["GET"])
@@ -44,6 +67,9 @@ def names():
 
 
 
-if __name__ == '__main__':
-    context = ('server_key.crt', 'server_key.key') # certificate and key files
+    
+
+
+if __name__ == "__main__":
+    context = ('server_key/.crt', 'server_key/.key') # certificate and key files
     app.run(debug=True, port=3536, ssl_context=context)
