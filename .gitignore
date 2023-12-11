@@ -2,3 +2,4 @@ venv/
 server_key/
 __pycache__/
 .env
+api_test*
