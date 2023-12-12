@@ -56,13 +56,11 @@ limiter = Limiter(
 )
 
 
-#    if api_key == flask.request.headers.get("API_KEY"):
-
-
 
 # api routes
 @app.route('/api', methods=["GET"])
 async def index():
+    if api_key != flask.request.headers.get("API_KEY"): return flask.jsonify({"error": "Invalid API key"}), 401
     return flask.jsonify('API is online!'), 200
 
 
@@ -70,6 +68,7 @@ async def index():
 @limiter.limit("3/30 seconds")
 @app.route("/api/start", methods=["POST"])
 async def start():
+    if api_key != flask.request.headers.get("API_KEY"): return flask.jsonify({"error": "Invalid API key"}), 401
 
     def start_server():
         asyncio.set_event_loop(asyncio.new_event_loop())
@@ -86,6 +85,7 @@ async def start():
 @app.route("/api/command", methods=["POST"])
 @limiter.limit("50/30 seconds")
 async def command():
+    if api_key != flask.request.headers.get("API_KEY"): return flask.jsonify({"error": "Invalid API key"}), 401
     try:
         command = flask.request.json["command"]
     except KeyError:
@@ -106,7 +106,7 @@ async def command():
 @app.route("/api/log", methods=["GET"]) 
 @limiter.limit("10/30 seconds")
 async def get_log():
-
+    if api_key != flask.request.headers.get("API_KEY"): return flask.jsonify({"error": "Invalid API key"}), 401
     try:
         # the amount of lines they requested to see
         requested_lines = flask.request.json["lines"]
