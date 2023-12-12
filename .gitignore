@@ -2,4 +2,5 @@ venv/
 server_key/
 __pycache__/
 .env
-api_test*
+api_test.py
+log.txt
