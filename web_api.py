@@ -6,7 +6,7 @@ import asyncio
 import threading
 import traceback
 
-from minecraft_server import server as start_minecraft_server, send_command
+from minecraft_server import server as start_minecraft_server, send_command, log, error_log
 
 
 
@@ -19,6 +19,11 @@ if not os.getenv("API_KEY"):
 else:
     api_key = os.getenv("API_KEY")
 
+if not os.getenv("PORT"):
+    raise Exception("Please set the API_PORTKEY environment variable")
+else:
+    port = int(os.getenv("PORT"))
+
 if not os.getenv("HTTPS_CERTIFICATE_PATH"):
     raise Exception("Please set the HTTPS_CERTIFICATE_PATH environment variable")
 else:
@@ -28,6 +33,10 @@ if not os.getenv("HTTPS_KEY_PATH"):
     raise Exception("Please set the HTTPS_KEY_PATH environment variable")
 else:
     key_path = os.getenv("HTTPS_KEY_PATH")
+
+
+
+
 
 
 # load flask
@@ -49,10 +58,12 @@ limiter = Limiter(
 
 #    if api_key == flask.request.headers.get("API_KEY"):
 
+
+
 # api routes
 @app.route('/api')
 async def index():
-    return flask.jsonify('API is online!')
+    return flask.jsonify('API is online!'), 200
 
 
 
@@ -75,7 +86,10 @@ async def start():
 @app.route("/api/command", methods=["POST"])
 @limiter.limit("50/30 seconds")
 async def command():
-    command = flask.request.json["command"]
+    try:
+        command = flask.request.json["command"]
+    except KeyError:
+        return flask.jsonify({"error": "\"command\" key was not found in the request json"}), 400
 
     try:
         if type(command) == str:
@@ -84,18 +98,38 @@ async def command():
         return flask.jsonify({"command_output": response}), 200
     
     except Exception as e:
-        print(traceback.format_exc())
-        return flask.jsonify({"error": traceback.format_exc()}), 500
+        error_log(traceback.format_exc())
+        return flask.jsonify({"error": "An error occurred"}), 500
 
 
-@app.route("/api/players", methods=["GET"])
-@limiter.limit("15/30 seconds")
-async def names():
-    data = {"names": ["test1", "test2", "test3"]}
-    return flask.jsonify(data)
+
+@app.route("/api/log", methods=["GET"]) 
+@limiter.limit("10/30 seconds")
+async def get_log():
+
+    try:
+        # the amount of lines they requested to see
+        requested_lines = flask.request.json["lines"]
+    except:
+        requested_lines = 15
+
+    # make sure that the requested lines is a valid number
+    try:
+        requested_lines = int(requested_lines) * -1
+    except:
+        return flask.jsonify({"error": "The amount of lines requested must be a number"}), 400
+
+    try:
+        with open(os.path.join(__location__, "log.txt"), "r") as file:
+            lines = file.readlines()
+            last_lines = lines[requested_lines:]
+            return flask.jsonify({"log": "".join(last_lines)}), 200
+    except Exception as e:
+        error_log(traceback.format_exc())
+        return flask.jsonify({"error": "An error occurred"}), 500
 
 
 
 if __name__ == "__main__":
     context = (cert_path, key_path) # certificate and key files
-    app.run(debug=True, port=3536, ssl_context=context)
+    app.run(debug=True, port=port, ssl_context=context)
