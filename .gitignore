@@ -4,3 +4,4 @@ __pycache__/
 .env
 api_test.py
 log.txt
+error_log.txt
