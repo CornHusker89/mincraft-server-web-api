@@ -36,7 +36,7 @@ else:
 
 
 
-
+minecraft_server_started: bool = False
 
 
 # load flask
@@ -60,7 +60,9 @@ limiter = Limiter(
 # api routes
 @app.route('/api', methods=["GET"])
 async def index():
-    if api_key != flask.request.headers.get("API_KEY"): return flask.jsonify({"error": "Invalid API key"}), 401
+    if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
+    global minecraft_server_started
+    if not minecraft_server_started: return flask.jsonify({"error": "The minecraft server has not been started yet"}), 400
     return flask.jsonify('API is online!'), 200
 
 
@@ -68,9 +70,12 @@ async def index():
 @limiter.limit("3/30 seconds")
 @app.route("/api/start", methods=["POST"])
 async def start():
-    if api_key != flask.request.headers.get("API_KEY"): return flask.jsonify({"error": "Invalid API key"}), 401
-
+    if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
+    global minecraft_server_started
+    if minecraft_server_started: return flask.jsonify({"error": "The minecraft server has already been started"}), 400
     def start_server():
+        global minecraft_server_started
+        minecraft_server_started = True
         asyncio.set_event_loop(asyncio.new_event_loop())
         loop = asyncio.get_event_loop()
         loop.create_task(start_minecraft_server())
@@ -85,7 +90,9 @@ async def start():
 @app.route("/api/command", methods=["POST"])
 @limiter.limit("50/30 seconds")
 async def command():
-    if api_key != flask.request.headers.get("API_KEY"): return flask.jsonify({"error": "Invalid API key"}), 401
+    if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
+    global minecraft_server_started
+    if not minecraft_server_started: return flask.jsonify({"error": "The minecraft server has not been started yet"}), 400
     try:
         command = flask.request.json["command"]
     except KeyError:
@@ -106,7 +113,7 @@ async def command():
 @app.route("/api/log", methods=["GET"]) 
 @limiter.limit("10/30 seconds")
 async def get_log():
-    if api_key != flask.request.headers.get("API_KEY"): return flask.jsonify({"error": "Invalid API key"}), 401
+    if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
     try:
         # the amount of lines they requested to see
         requested_lines = flask.request.json["lines"]
