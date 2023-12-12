@@ -137,6 +137,33 @@ async def get_log():
 
 
 
+@app.route("/api/errorlog", methods=["GET"]) 
+@limiter.limit("10/30 seconds")
+async def get_log():
+    if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
+    try:
+        # the amount of lines they requested to see
+        requested_lines = flask.request.json["lines"]
+    except:
+        requested_lines = 15
+
+    # make sure that the requested lines is a valid number
+    try:
+        requested_lines = int(requested_lines) * -1
+    except:
+        return flask.jsonify({"error": "The amount of lines requested must be a number"}), 400
+
+    try:
+        with open(os.path.join(__location__, "error_log.txt"), "r") as file:
+            lines = file.readlines()
+            last_lines = lines[requested_lines:]
+            return flask.jsonify({"log": "".join(last_lines)}), 200
+    except Exception as e:
+        error_log(traceback.format_exc())
+        return flask.jsonify({"error": "An error occurred"}), 500
+
+
+
 if __name__ == "__main__":
     context = (cert_path, key_path) # certificate and key files
     app.run(debug=True, port=port, ssl_context=context)

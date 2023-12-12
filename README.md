@@ -20,3 +20,5 @@ All applicable APIs will return 400 if the minecraft server has not been started
 `api/command` (POST) - Executes minecraft command on the server. Returns data in 'command_output' key. Returns 200 on sucess.
 
 `api/log` (GET) - Returns the last lines from log. Use 'lines' json data to denote how many lines to return. Default 15. Returns data in 'log' key. Returns 200 on sucess.
+
+`api/errorlog` (GET) - Returns the last lines from error log. Use 'lines' json data to denote how many lines to return. Default 15. Returns data in 'log' key. Returns 200 on sucess.
