@@ -16,6 +16,17 @@ return_string_list = []
 return_ready = False # if the return string is ready to be read
 
 
+def log(message: str):
+    """Appends a message to the log.txt file"""
+    with open("log.txt", "a") as file:
+        file.write(message + "\n")
+
+def error_log(message: str):
+    """Appends a message to the error_log.txt file"""
+    with open("error_log.txt", "a") as file:
+        file.write(message + "\n")
+
+
 async def server():
     global next_command_list, get_next_output, return_string, return_ready, full_command_list, return_string_list
     stdout = asyncio.subprocess.PIPE
@@ -33,7 +44,7 @@ async def server():
             await asyncio.sleep(0.1)
         data = await shell_script.stdout.readline()
         line = data.decode('ascii').rstrip()
-        print(line)
+        log(line)
 
         if get_next_output:
             return_string_list.append(line)
@@ -75,6 +86,7 @@ async def send_command(command: list) -> str:
     while True:
         await asyncio.sleep(0.1)
         if return_ready:
+            log(return_string)
             return return_string
     
 
