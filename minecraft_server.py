@@ -41,7 +41,7 @@ async def server():
                 for i, line in enumerate(return_string_list):
                     return_string += f"{full_command_list[i]} - {line}\n"
 
-                return_string = return_string[:-2] # remove the last newline
+                return_string = return_string[:-1] # remove the last newline
                 return_ready = True
                 get_next_output = False
                 
