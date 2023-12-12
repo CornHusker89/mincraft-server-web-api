@@ -13,7 +13,7 @@ All applicable APIs will return 400 if the minecraft server has not been started
 `https://<address>:<port>/`
 
 ### Endpoints:
-`api/` (GET) - Tests if the api is running. Returns 200 on sucess.
+`api` (GET) - Tests if the api is running. Returns 200 on sucess.
 
 `api/start` (POST) - Start the minecraft server. Returns 204 on sucess.
 
