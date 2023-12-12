@@ -61,7 +61,7 @@ limiter = Limiter(
 
 
 # api routes
-@app.route('/api')
+@app.route('/api', methods=["GET"])
 async def index():
     return flask.jsonify('API is online!'), 200
 
