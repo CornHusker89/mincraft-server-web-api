@@ -84,7 +84,7 @@ async def execute_command(shell_script: asyncio.subprocess.Process):
 async def player_check():
     failed_lask_check = False
     while True:
-        await asyncio.sleep(30)
+        await asyncio.sleep(300)
         print("testing player count")
         message = await send_command(["testfor @a"])
         if message.find("No targets matched selector") != -1:
