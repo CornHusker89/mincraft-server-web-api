@@ -1,6 +1,7 @@
 
 import flask
 from flask_limiter import Limiter
+from waitress import serve
 import os
 import asyncio
 import threading
@@ -13,26 +14,12 @@ from minecraft_server import server as start_minecraft_server, send_command, log
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
+
 # get enviroment variables
-if not os.getenv("API_KEY"):
-    raise Exception("Please set the API_KEY environment variable")
-else:
-    api_key = os.getenv("API_KEY")
-
-if not os.getenv("PORT"):
-    raise Exception("Please set the API_PORTKEY environment variable")
-else:
-    port = int(os.getenv("PORT"))
-
-if not os.getenv("HTTPS_CERTIFICATE_PATH"):
-    raise Exception("Please set the HTTPS_CERTIFICATE_PATH environment variable")
-else:
-    cert_path = os.getenv("HTTPS_CERTIFICATE_PATH")
-
-if not os.getenv("HTTPS_KEY_PATH"):
-    raise Exception("Please set the HTTPS_KEY_PATH environment variable")
-else:
-    key_path = os.getenv("HTTPS_KEY_PATH")
+api_key = os.getenv("API_KEY")
+port = os.getenv("PORT")
+cert_path = os.getenv("HTTPS_CERTIFICATE_PATH")
+key_path = os.getenv("HTTPS_KEY_PATH")
 
 
 
@@ -59,16 +46,16 @@ limiter = Limiter(
 
 # api routes
 @app.route('/api', methods=["GET"])
+@limiter.limit("50/30 seconds")
 async def index():
     if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
-    global minecraft_server_started
-    if not minecraft_server_started: return flask.jsonify({"error": "The minecraft server has not been started yet"}), 400
     return flask.jsonify('API is online!'), 200
 
 
 
-@limiter.limit("3/30 seconds")
+
 @app.route("/api/start", methods=["POST"])
+@limiter.limit("3/30 seconds")
 async def start():
     if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
     global minecraft_server_started
@@ -88,7 +75,7 @@ async def start():
 
 
 @app.route("/api/command", methods=["POST"])
-@limiter.limit("50/30 seconds")
+@limiter.limit("80/30 seconds")
 async def command():
     if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
     global minecraft_server_started
@@ -139,7 +126,7 @@ async def get_log():
 
 @app.route("/api/errorlog", methods=["GET"]) 
 @limiter.limit("10/30 seconds")
-async def get_log():
+async def get_error_log():
     if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
     try:
         # the amount of lines they requested to see
@@ -166,4 +153,6 @@ async def get_log():
 
 if __name__ == "__main__":
     context = (cert_path, key_path) # certificate and key files
-    app.run(debug=True, port=port, ssl_context=context)
+    #app.run(debug=True, port=port, ssl_context=context)
+    print("starting server on port " + str(port))
+    serve(app=app, host='0.0.0.0', port=port, url_scheme="https")
