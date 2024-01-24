@@ -7,20 +7,20 @@ import asyncio
 import threading
 import traceback
 
-from minecraft_server import server as start_minecraft_server, send_command, log, error_log
+from minecraft_server import server as start_minecraft_server, player_check as start_autoshutdown, send_command, log, error_log
 
+import dotenv
+env_path = dotenv.find_dotenv()
+env_values = dotenv.dotenv_values(env_path)
+
+# get enviroment variables
+api_key = env_values["API_KEY"]
+port = env_values["PORT"]
+cert_path = env_values["HTTPS_CERTIFICATE_PATH"]
+key_path = env_values["HTTPS_KEY_PATH"]
 
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-
-
-
-# get enviroment variables
-api_key = os.getenv("API_KEY")
-port = os.getenv("PORT")
-cert_path = os.getenv("HTTPS_CERTIFICATE_PATH")
-key_path = os.getenv("HTTPS_KEY_PATH")
-
 
 
 minecraft_server_started: bool = False
@@ -49,7 +49,7 @@ limiter = Limiter(
 @limiter.limit("50/30 seconds")
 async def index():
     if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
-    return flask.jsonify('API is online!'), 200
+    return flask.jsonify({"message": "API is online!"}), 200
 
 
 
@@ -70,7 +70,25 @@ async def start():
         
     thread = threading.Thread(target=start_server)
     thread.start()
-    return flask.jsonify({}), 204
+    return flask.jsonify({"message": "Server has been started"}), 204
+
+
+
+@app.route("/api/enable_shutdown", methods=["POST"])
+@limiter.limit("3/30 seconds")
+async def autoshutdown():
+    if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
+    global minecraft_server_started
+    if not minecraft_server_started: return flask.jsonify({"error": "The minecraft server has not been started"}), 400
+    def enable_autoshutdown():
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        loop = asyncio.get_event_loop()
+        loop.create_task(start_autoshutdown())
+        loop.run_forever()
+        
+    thread = threading.Thread(target=enable_autoshutdown)
+    thread.start()
+    return flask.jsonify({"message": "Automatic shutdown has been enabled"}), 204
 
 
 
@@ -98,7 +116,7 @@ async def command():
 
 
 @app.route("/api/log", methods=["GET"]) 
-@limiter.limit("10/30 seconds")
+@limiter.limit("30/30 seconds")
 async def get_log():
     if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
     try:
@@ -125,7 +143,7 @@ async def get_log():
 
 
 @app.route("/api/errorlog", methods=["GET"]) 
-@limiter.limit("10/30 seconds")
+@limiter.limit("30/30 seconds")
 async def get_error_log():
     if f"Bearer {api_key}" != flask.request.headers.get("Authorization"): return flask.jsonify({"error": "Invalid Authorization"}), 401
     try:

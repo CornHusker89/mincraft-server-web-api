@@ -2,10 +2,23 @@
 
 import os
 import asyncio
+import boto3
 
-server_executable_path = os.getenv("SERVER_EXECUTABLE_PATH")
+import dotenv
+env_path = dotenv.find_dotenv()
+env_values = dotenv.dotenv_values(env_path)
+
+# get enviroment variables
+aws_access_key = env_values["AWS_ACCESS_KEY"]
+aws_secret_key = env_values["AWS_SECRET_KEY"]
+region_name = env_values["EC2_REGION_NAME"]
+instance_id = env_values["EC2_INSTANCE_ID"]
+
+server_executable_path = env_values["SERVER_EXECUTABLE_PATH"]
 server_executable_directory = server_executable_path[:server_executable_path.rfind("/")]
 server_executable_name = server_executable_path[server_executable_path.rfind("/")+1:]
+
+
 
 next_command_list: list = []
 full_command_list: list = []
@@ -67,7 +80,28 @@ async def execute_command(shell_script: asyncio.subprocess.Process):
             await shell_script.stdin.drain()
 
 
-async def send_command(command: list) -> str:
+# kill the server if there are no players online
+async def player_check():
+    failed_lask_check = False
+    while True:
+        await asyncio.sleep(30)
+        print("testing player count")
+        message = await send_command(["testfor @a"])
+        if message.find("No targets matched selector") != -1:
+            if failed_lask_check:
+                print("shutting down server")
+
+                # Create an EC2 client
+                ec2 = boto3.client('ec2', region_name=region_name, aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+
+                # Restart the EC2 instance
+                ec2.stop_instances(InstanceIds=[instance_id])
+            else:
+                failed_lask_check = True
+
+
+
+async def send_command(commands: list) -> str:
     """
     Executes the command on the minecraft server
     (Async)
@@ -78,7 +112,7 @@ async def send_command(command: list) -> str:
     global next_command_list, get_next_output, return_ready, return_string, full_command_list, return_string_list
     return_string_list = []
     return_string = ""
-    next_command_list = next_command_list + command
+    next_command_list = next_command_list + commands
     full_command_list = next_command_list.copy()
     return_ready = False
     
