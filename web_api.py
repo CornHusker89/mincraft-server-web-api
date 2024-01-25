@@ -70,7 +70,7 @@ async def start():
         
     thread = threading.Thread(target=start_server)
     thread.start()
-    return flask.jsonify({"message": "Server has been started"}), 204
+    return flask.jsonify({"message": "Server has been started"}), 200
 
 
 
@@ -88,7 +88,7 @@ async def autoshutdown():
         
     thread = threading.Thread(target=enable_autoshutdown)
     thread.start()
-    return flask.jsonify({"message": "Automatic shutdown has been enabled"}), 204
+    return flask.jsonify({"message": "Automatic shutdown has been enabled"}), 200
 
 
 
