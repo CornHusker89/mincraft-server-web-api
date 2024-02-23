@@ -5,6 +5,8 @@ NOTE: This is intended for use with a minecraft (bedrock edition) dedicated serv
 
 ## API Documentation
 
+The authorization is a very basic key system.
+
 All APIs will return 401 on an incorrect Authorization header.
 
 All applicable APIs will return 400 if the minecraft server has not been started.
