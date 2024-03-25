@@ -61,12 +61,15 @@ async def start():
     global minecraft_server_started
     if minecraft_server_started: return flask.jsonify({"error": "The minecraft server has already been started"}), 400
     def start_server():
-        global minecraft_server_started
-        minecraft_server_started = True
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        loop = asyncio.get_event_loop()
-        loop.create_task(start_minecraft_server())
-        loop.run_forever()
+        try:
+            global minecraft_server_started
+            minecraft_server_started = True
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            loop = asyncio.get_event_loop()
+            loop.create_task(start_minecraft_server())
+            loop.run_forever()
+        except:
+            error_log("An error occured in the main mc server. traceback: " + traceback.format_exc())
         
     thread = threading.Thread(target=start_server)
     thread.start()
